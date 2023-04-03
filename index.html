@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <title>Document</title>
+</head>
+<body>
+
+    <div class="container">
+        
+
+        <div class="row"> 
+            <div class="col s12">
+                    <div class="col s12">
+                        <h3 class="center-align">Report Ticket Logs</h3>
+                        <div class="divider"></div>
+                    </div>                   
+            </div>    
+                   
+        </div>
+
+        <div class="row">
+            <div class="col s7">
+                <form  id="insertForm" method="post" autocomplete="off">
+                    <div class="row">
+                        <div class="input-field col s6">                            
+                            <input type="text" id="id" name="id" > 
+                            <label>ID</label>
+                        </div>
+                    </div>
+
+
+                    <div class="row">
+                        <div class="input-field col s6">                            
+                            <input type="text" id="name" name="name" > 
+                            <label>Full name</label>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="input-field col s6">                            
+                            <input type="text" id="ticket" name="ticket" > 
+                            <label>Ticket Number</label>
+                        </div>
+                    </div>
+
+                    
+            
+                    <button class="btn waves-effect waves-light" 
+                            type="submit" 
+                            id="submit"
+                            name="action">Submit
+                            <i class="material-icons right">send</i>
+                    </button>
+
+                    
+                  </form>
+            </div>
+
+            <div class="col s5">
+               
+                <div class="row">
+                    <ul>
+                        <form  id="listrec" method="post" autocomplete="off">
+                            <label for="id">ID:</label>
+                            <input type="text" id="id" name="id"><br><br>
+    
+                            <button class="btn waves-effect waves-light" id="testbtn">Show list logs</button>
+                        </form>
+                        
+                    </ul>
+                </div> 
+                
+                <div class="row" id="lstcontainer">
+                   
+                </div>
+
+            </div>
+        </div>
+      
+
+
+    </div>
+      
+      
+
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.7.7/handlebars.min.js"></script>
+
+      <script id="listitems" type="text/x-handlebars-template">
+       
+        <div class="row" id="logslist">
+            {{#each data}}
+                <div class="divider"></div>
+                <div class="section">
+                    <table>
+                        <tr>
+                            <th>ID</th>
+                            <th>Full name</th>
+                            <th>Ticket Number</th>
+                        </tr>
+                        <tr>
+                            <td>{{id}}</td>
+                            <td>{{name}}</td>
+                            <td>{{ticket}}</td>
+                        </tr>
+                      </table>
+                </div>
+            {{/each}}
+            <a class="waves-effect waves-light btn-small" id="btnclear">clear</a>
+       </div>
+
+      </script>
+
+      <script>
+
+        $(document).ready(function(){
+
+            $('input[type="text"]').val('');
+
+
+
+            $('#testbtn').click( function(event) {
+                event.preventDefault();
+                M.Toast.dismissAll();
+                // serialize form data
+                var formData =  $("#listrec").serializeArray();
+
+                console.log(JSON.stringify(formData));
+
+
+               
+
+               
+                    // send AJAX request
+                    $.ajax({
+                            url: '/quirol/cgi-bin/get.o',
+                            type:'POST',
+                            data: JSON.stringify(formData),
+                            contentType:'application/json',
+                            dataType:'json',
+                            success: function(response) {
+                                if (response.status === "success") {
+                                    //console.log(response.message)
+                                    // console.log(response)
+                                    console.log(response.data)
+
+                                    var template = Handlebars.compile($("#listitems").html());
+                                    var html = template(response);
+
+                                    $("#lstcontainer").html(html);
+                                  
+
+                                    var toastHTML = '<i class="material-icons">search</i>&nbsp;<span>' + response.data.length + ' record(s) was retrieved.</span>';
+                                    M.toast({html: toastHTML , classes: 'rounded'});
+
+
+                               
+                                    $('#btnclear').click( function(event) {
+                                        event.preventDefault();                                       
+                                        $("#logslist").remove();
+                                    });
+
+
+                                }  else if (response.status === "error") {
+                                    console.log(response.message)
+                                    console.log(response.message_additional)                                 
+                                }               
+                            },
+                            error: function(xhr, status, error) {
+                                console.log(xhr.responseText);
+                            }
+                        });
+
+            });
+
+            $("#submit").click( function(event) {
+                     event.preventDefault();
+
+                      // serialize form data
+                      var formData =  $("#insertForm").serializeArray();
+
+                      console.log(JSON.stringify(formData));
+
+                        // send AJAX request
+                        $.ajax({
+                            url: '/quirol/cgi-bin/post.o',
+                            type:'POST',
+                            data: JSON.stringify(formData),
+                            contentType:'application/json',
+                            dataType:'json',
+                            success: function(response) {
+                                if (response.status === "success") {
+                                    console.log(response.message)
+                                    console.log(response.data)
+                                    var toastHTML = '<span>data was inserted.</span>';
+                                    M.toast({html: toastHTML, classes: 'rounded'});
+
+                                    $('input[type="text"]').val('');
+
+                                }  else if (response.status === "error") {
+                                    console.log(response.message)
+                                    console.log(response.message_additional)
+
+                                    var toastHTML = '<i class="material-icons">error_outline</i>&nbsp;<span>' + response.message + '</span>';
+                                    M.toast({html: toastHTML , classes: 'rounded'});                                  
+
+
+                                }               
+                            },
+                            error: function(xhr, status, error) {
+                                console.log(xhr.responseText);
+                            }
+
+
+                        });                 
+            });
+
+        });
+        
+      </script>
+
+</body>
+</html>
